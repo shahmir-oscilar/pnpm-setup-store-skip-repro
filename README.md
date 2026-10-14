@@ -1,5 +1,7 @@
 # pnpm/setup store-skip repro
 
+> **This branch runs every job on [shahmir-oscilar/setup@`f285b2f`](https://github.com/shahmir-oscilar/setup/commit/f285b2f1bcd4ea81ec352aa4522992da92e5710b), which treats an empty `index.db-wal` as missing in the store fingerprint.** With it, every check job, including those without a container, should log `The store has not changed since it was restored, not saving cache.` `main` runs stock v3.1.1 and shows the bug.
+
 pnpm/setup v3.1.0+ skips saving the store cache when the restored store is unchanged. This repo checks that skip in two kinds of job, using pnpm/setup v3.1.1 and pnpm 12.4.1.
 
 | Job | Container | Store (`pnpm store path`) |
