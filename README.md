@@ -1,6 +1,16 @@
 # pnpm/setup store-skip repro
 
 > **This branch runs every job on [shahmir-oscilar/setup@`f285b2f`](https://github.com/shahmir-oscilar/setup/commit/f285b2f1bcd4ea81ec352aa4522992da92e5710b), which treats an empty `index.db-wal` as missing in the store fingerprint.** With it, every check job, including those without a container, should log `The store has not changed since it was restored, not saving cache.` `main` runs stock v3.1.1 and shows the bug.
+>
+> Results from the same push of both branches:
+>
+> | Job | `main` (v3.1.1), [run 38624735014](https://github.com/shahmir-oscilar/pnpm-setup-store-skip-repro/actions/runs/38624735014) | this branch, [run 38624734553](https://github.com/shahmir-oscilar/pnpm-setup-store-skip-repro/actions/runs/38624734553) |
+> |---|---|---|
+> | `runner-check` | `Cache saved with the key: …` | `The store has not changed since it was restored, not saving cache.` |
+> | `container-check` | `The store has not changed since it was restored, not saving cache.` | `The store has not changed since it was restored, not saving cache.` |
+> | `runner-split-check` | `Cache saved with the key: …` | `The store has not changed since it was restored, not saving cache.` |
+>
+> In `runner-split-check` on this branch, `scripts/fingerprint.sh` still sees the empty `index.db-wal` disappear during the install, and the fixed fingerprint ignores it.
 
 pnpm/setup v3.1.0+ skips saving the store cache when the restored store is unchanged. This repo checks that skip in two kinds of job, using pnpm/setup v3.1.1 and pnpm 12.4.1.
 
