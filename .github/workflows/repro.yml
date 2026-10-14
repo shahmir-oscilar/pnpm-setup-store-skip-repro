@@ -1,0 +1,64 @@
+name: repro
+
+# Each check job restores the store its seed job saved, an exact lockfile match,
+# and changes nothing in it. pnpm/setup should then log "The store has not
+# changed since it was restored, not saving cache." in the post step.
+# The jobs run in sequence so each check restores the store saved just before it.
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  runner-seed:
+    # No container: `pnpm store path` resolves inside pnpm/setup's install directory (~/setup-pnpm).
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          runtime: node@24
+          cache: true
+
+  runner-check:
+    needs: runner-seed
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          runtime: node@24
+          cache: true
+      - run: scripts/fingerprint.sh after-setup
+      - run: pnpm -v
+      - run: scripts/fingerprint.sh after-pnpm-v
+      - run: pnpm run noop
+      - run: scripts/fingerprint.sh after-pnpm-run
+
+  container-seed:
+    # Container: the store lands on the workspace mount (/__w/.pnpm-store), apart from ~/setup-pnpm.
+    needs: runner-check
+    runs-on: ubuntu-24.04
+    container: node:24-bookworm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          runtime: node@24
+          cache: true
+
+  container-check:
+    needs: container-seed
+    runs-on: ubuntu-24.04
+    container: node:24-bookworm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          runtime: node@24
+          cache: true
+      - run: scripts/fingerprint.sh after-setup
+      - run: pnpm -v
+      - run: scripts/fingerprint.sh after-pnpm-v
+      - run: pnpm run noop
+      - run: scripts/fingerprint.sh after-pnpm-run
